@@ -24,6 +24,7 @@ scheduler.start()
     filters.regex(r"https://(?:e-|ex)hentai.org/g/(\d+)/([a-f0-9]+)") & filters.private
 )
 @rate_limit(request_limit=e_cfg.request_limit, time_limit=e_cfg.time_limit, total_request_limit=e_cfg.total_request_limit)
+@logger.catch
 async def ep(_, msg: Message):
     if e_cfg.disable and not is_admin_(msg.from_user.id):
         return await msg.reply("解析功能暂未开放")
@@ -31,7 +32,7 @@ async def ep(_, msg: Message):
     try:
         archiver_info, d_url, json_path = await ehentai_parse(msg.text, True)
     except Exception as e:
-        await m.edit(f"解析失败: {e}")
+        await m.edit(f"解析失败, 请检查画廊链接是否正确")
         raise e
     d = f"{archiver_info.gid}/{archiver_info.token}"
     btn = Ikm(
