@@ -3,8 +3,8 @@ proxy:
   port: 7890
   scheme: http
 user:
-  api_hash:
+  api_hash: # 从 https://my.telegram.org/apps 获取
   api_id:
-  bot_token:
+  bot_token: # 从 @BotFather 获取
 
 

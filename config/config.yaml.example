@@ -1,4 +1,4 @@
-admins: # 管理员列表
+admins: # 管理员列表 (可通过 https://t.me/getletbot 获取 ID)
   - 123456
 cookies: # EHentai cookies, F12控制台中获取即可
   - ipb_session_id=0bxxxxxxxxxxxxxxx05a807b; ipb_member_id=69xxx; ipb_pass_hash=88xxxxxxx41536d;
@@ -9,5 +9,5 @@ download: true # 是否直接下载
 request_limit: 10 # 速率限制 10次/86400秒
 time_limit: 86400
 total_request_limit: 100 # Bot每日总请求限制
-whitelist: # 白名单用户, 不受任何限制
+whitelist: # 白名单用户, 不受任何限制 (可通过 https://t.me/getletbot 获取 ID)
   - 123456
