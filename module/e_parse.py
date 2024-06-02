@@ -32,7 +32,7 @@ async def ep(_, msg: Message):
     try:
         archiver_info, d_url, json_path = await ehentai_parse(msg.text, True)
     except Exception as e:
-        await m.edit(f"解析失败, 请检查画廊链接是否正确")
+        await m.edit("解析失败, 请检查画廊链接是否正确")
         raise e
     d = f"{archiver_info.gid}/{archiver_info.token}"
     btn = Ikm(
@@ -50,8 +50,9 @@ async def ep(_, msg: Message):
     await msg.reply_document(json_path, quote=True, reply_markup=btn)
     await m.delete()
 
-    parse_count.add_count(msg.from_user.id)
-    logger.info(f"{msg.from_user.full_name} 归档 {msg.text} (今日 {parse_count.get_count(msg.from_user.id)} 个)")
+    uc = parse_count.get_counter(msg.from_user.id)
+    uc.add_count()
+    logger.info(f"{msg.from_user.full_name} 归档 {msg.text} (今日 {uc.day_count} 个)")
 
     os.remove(json_path)
 

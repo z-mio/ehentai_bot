@@ -74,6 +74,7 @@ class EConfig(Config):
         self.admins: list = self.retrieve("admins")
         self.request_limit: int = self.retrieve("request_limit")
         self.total_request_limit: int = self.retrieve("total_request_limit")
+        self.daily_request_limit: int = self.retrieve("daily_request_limit")
         self.time_limit: int = self.retrieve("time_limit")
         self.destroy_regularly: int = self.retrieve("destroy_regularly")
         self.cookies: list = self.retrieve("cookies")
