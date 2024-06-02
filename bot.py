@@ -30,20 +30,26 @@ app = Client(
 # 设置菜单
 @app.on_message(filters.command("menu") & filters.private & filters.user(e_cfg.admins))
 async def menu(_, message):
-    command = {
+    a_cmd = {
         "sw": "开关解析功能",
         "count": "今日解析次数",
         "d": "开关下载",
     }
-    # 命令按value重新排序
-    commands = dict(sorted(command.items(), key=lambda item: len(item[1])))
-    bot_menu = [BotCommand(command=k, description=v) for k, v in commands.items()]
+    u_cmd = {
+        "start": "开始",
+        "help": "帮助",
+    }
+
     await app.delete_bot_commands()
-    [
-        await app.set_bot_commands(bot_menu, scope=BotCommandScopeChat(i))
-        for i in e_cfg.admins
-    ]
+
+    for i in e_cfg.admins:
+        await app.set_bot_commands(r_c(a_cmd), scope=BotCommandScopeChat(i))
+    await app.set_bot_commands(r_c(u_cmd))
     await app.send_message(chat_id=message.chat.id, text="菜单设置成功，请退出聊天界面重新进入来刷新菜单")
+
+
+def r_c(cmd: dict):
+    return [BotCommand(command=k, description=v) for k, v in cmd.items()]
 
 
 if __name__ == "__main__":
