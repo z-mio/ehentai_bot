@@ -12,12 +12,13 @@ from dataclasses import dataclass
 
 from loguru import logger
 
+EHentaiURL = None
+
 
 class EHentai:
     def __init__(self, cookies: list | str, proxy: str = None):
         self.eHentai_base_url = "https://e-hentai.org"
         self.exHentai_base_url = "https://exhentai.org"
-        self.eHentai_url = self.__check_ex_permission()
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 "
                           "Safari/537.36",
@@ -32,6 +33,11 @@ class EHentai:
             "Cookie": random.choice(cookies) if isinstance(cookies, list) else cookies,
         }
         self.proxy = proxy
+
+        global EHentaiURL
+        if EHentaiURL is None:
+            EHentaiURL = self.check_ex_permission()
+        self.eHentai_url = EHentaiURL
 
     @staticmethod
     def get_gid_from_url(url: str) -> Union["GUrl", None]:
@@ -109,15 +115,15 @@ class EHentai:
             f.write(json.dumps(archiver_info.raw_json, ensure_ascii=False, indent=4))
         return op
 
-    async def __check_ex_permission(self) -> str:
+    def check_ex_permission(self) -> str:
         """检查是否已经通过了exhentai的权限检查"""
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
-            response = await client.get(self.exHentai_base_url, headers=self.headers)
-            if response.status_code == 200:
-                if response.text != "":
-                    return self.exHentai_base_url
-            else:
-                logger.error('无法检查里站权限')
+
+        response = httpx.get(self.exHentai_base_url, headers=self.headers, proxy=self.proxy)
+        if response.status_code == 200:
+            if response.text != "":
+                return self.exHentai_base_url
+        else:
+            logger.error('无法检查里站权限')
         return self.eHentai_base_url
 
 
