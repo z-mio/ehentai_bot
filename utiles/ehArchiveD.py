@@ -1,3 +1,5 @@
+# From https://github.com/Womsxd/ehArchiveD/blob/master/main.py
+
 import asyncio
 import json
 import os
