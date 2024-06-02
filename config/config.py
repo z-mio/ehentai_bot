@@ -60,7 +60,11 @@ class BotConfig(Config):
         self.hostname = self.retrieve("proxy.hostname")
         self.port = self.retrieve("proxy.port")
         self.scheme = self.retrieve("proxy.scheme")
-        self.proxy = f"{self.scheme}://{self.hostname}:{self.port}"
+        self.proxy = (
+            f"{self.scheme}://{self.hostname}:{self.port}"
+            if all([self.scheme, self.hostname, self.port])
+            else None
+        )
 
 
 class EConfig(Config):
