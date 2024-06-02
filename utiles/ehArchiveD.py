@@ -30,10 +30,9 @@ class EHentai:
     @staticmethod
     def get_gid_from_url(url: str) -> Union["GUrl", None]:
         """从url中获取gid和token"""
-        match = re.search(r"(\d+)/([a-f0-9]+)", url)
-        if match:
+        if match := re.search(r"(\d+)/([a-f0-9]+)", url):
             try:
-                return GUrl(int(match.group(1)), match.group(2))
+                return GUrl(int(match[1]), match[2])
             except IndexError:
                 return None
         raise
@@ -48,8 +47,8 @@ class EHentai:
             response.raise_for_status()
             try:
                 result = response.json()
-            except json.decoder.JSONDecodeError:
-                raise IPBlocking()
+            except json.decoder.JSONDecodeError as error:
+                raise IPBlocking() from error
 
             gmetadata = result.get("gmetadata", [])[0]
             torrents = [Torrent(**torrent) for torrent in gmetadata.pop("torrents", [])]
@@ -94,12 +93,12 @@ class EHentai:
             case None:
                 raise FailedGetDownloadUrl(archiver_info.gid)
             case match:
-                return match.group(1) + "?start=1"
+                return f"{match.group(1)}?start=1"
 
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
         """保存画廊信息"""
-        op = os.path.join(str(output_path), f"{archiver_info.gid}.json")
+        op = os.path.join(output_path, f"{archiver_info.gid}.json")
         with open(op, "w", encoding="utf-8") as f:
             f.write(json.dumps(archiver_info.raw_json, ensure_ascii=False, indent=4))
         return op
@@ -143,6 +142,10 @@ class GMetaData:
     torrents: List[Torrent]
     tags: List[str]
     raw_json: dict
+    parent_gid: int = None
+    parent_key: str = None
+    first_gid: int = None
+    first_key: str = None
 
 
 class EHentaiError(Exception):
@@ -171,7 +174,7 @@ class IPBlocking(EHentaiError):
 if __name__ == "__main__":
     cookie = ""
     e = EHentai(cookie)
-    gurl = e.get_gid_from_url("https://e-hentai.org/g/2936195/178b3c5fec/")
+    gurl = e.get_gid_from_url("https://exhentai.org/g/2936616/18cae39262/")
     print(gurl)
     archiver_info = asyncio.run(e.get_archiver_info(gurl))
     print(archiver_info)
