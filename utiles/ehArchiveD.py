@@ -8,10 +8,14 @@ from typing import List
 import httpx
 from dataclasses import dataclass
 
+from loguru import logger
+
 
 class EHentai:
     def __init__(self, cookies: list | str, proxy: str = None):
         self.eHentai_base_url = "https://e-hentai.org"
+        self.exHentai_base_url = "https://exhentai.org"
+        self.eHentai_url = self.__check_ex_permission()
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 "
                           "Safari/537.36",
@@ -40,7 +44,7 @@ class EHentai:
     async def get_archiver_info(self, gurl: Union["GUrl", str]) -> "GMetaData":
         """获取画廊元数据"""
         g = gurl if isinstance(gurl, GUrl) else self.get_gid_from_url(gurl)
-        url = f"{self.eHentai_base_url}/api.php"
+        url = f"{self.eHentai_url}/api.php"
         body = {"method": "gdata", "gidlist": [[g.gid, g.token]], "namespace": 1}
         async with httpx.AsyncClient(proxy=self.proxy) as client:
             response = await client.post(url, headers=self.headers, json=body)
@@ -57,7 +61,7 @@ class EHentai:
     async def __archiver(self, archiver_info: "GMetaData", form_data: dict) -> str:
         """档案页面操作"""
         headers = self.headers.copy()
-        url = f"{self.eHentai_base_url}/archiver.php?gid={archiver_info.gid}&token={archiver_info.token}&or={archiver_info.archiver_key}"
+        url = f"{self.eHentai_url}/archiver.php?gid={archiver_info.gid}&token={archiver_info.token}&or={archiver_info.archiver_key}"
         headers["referer"] = url
 
         async with httpx.AsyncClient(proxy=self.proxy) as client:
@@ -102,6 +106,17 @@ class EHentai:
         with open(op, "w", encoding="utf-8") as f:
             f.write(json.dumps(archiver_info.raw_json, ensure_ascii=False, indent=4))
         return op
+
+    async def __check_ex_permission(self) -> str:
+        """检查是否已经通过了exhentai的权限检查"""
+        async with httpx.AsyncClient(proxy=self.proxy) as client:
+            response = await client.get(self.exHentai_base_url, headers=self.headers)
+            if response.status_code == 200:
+                if response.text != "":
+                    return self.exHentai_base_url
+            else:
+                logger.error('无法检查里站权限')
+        return self.eHentai_base_url
 
 
 # ================================== #
@@ -174,7 +189,7 @@ class IPBlocking(EHentaiError):
 if __name__ == "__main__":
     cookie = ""
     e = EHentai(cookie)
-    gurl = e.get_gid_from_url("https://exhentai.org/g/2936616/18cae39262/")
+    gurl = e.get_gid_from_url("https://e-hentai.org/g/2260938/1976f6d65d/")
     print(gurl)
     archiver_info = asyncio.run(e.get_archiver_info(gurl))
     print(archiver_info)
