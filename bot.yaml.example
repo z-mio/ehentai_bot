@@ -1,0 +1,10 @@
+proxy:
+  hostname: 127.0.0.1
+  port: 7890
+  scheme: http
+user:
+  api_hash:
+  api_id:
+  bot_token:
+
+
