@@ -71,6 +71,7 @@ class EConfig(Config):
     def __init__(self, cfg_path):
         super().__init__(cfg_path)
         self.whitelist: list = self.retrieve("whitelist")
+        self.blacklist: list = self.retrieve("blacklist")
         self.admins: list = self.retrieve("admins")
         self.request_limit: int = self.retrieve("request_limit")
         self.total_request_limit: int = self.retrieve("total_request_limit")

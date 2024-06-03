@@ -14,3 +14,5 @@ daily_request_limit: 50
 total_request_limit: 100 # Bot每日总请求限制
 whitelist: # 白名单用户, 不受任何限制 (可通过 https://t.me/getletbot 获取 ID)
   - 123456
+blacklist:
+  - 123456 # 黑名单用户, 不允许使用解析功能 (可通过 https://t.me/getletbot 获取 ID)
