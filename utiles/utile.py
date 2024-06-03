@@ -20,11 +20,12 @@ def rate_limit(request_limit=3, time_limit=60, total_request_limit=100, group: b
                 if group
                 else (message.from_user or message.sender_chat).id
             )
+            if user_id in e_cfg.blacklist:
+                return await message.reply('您已被列入黑名单，禁止使用解析')
             if user_id in e_cfg.whitelist or user_id in e_cfg.admins or e_cfg.disable:
                 # 白名单用户或管理员不受速率限制
                 return await func(client, message)
-            if user_id in e_cfg.blacklist:
-                return await message.reply('您已被列入黑名单，禁止使用解析')
+
             uc = parse_count.get_counter(user_id)
             if uc.day_count >= e_cfg.daily_request_limit:
                 return await message.reply('今日解析次数已用完, 明日再来吧')
