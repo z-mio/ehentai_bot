@@ -6,7 +6,13 @@ from pyrogram.types import BotCommand, BotCommandScopeChat
 
 from config.config import bot_cfg, e_cfg
 
-logger.add("logs/bot.log", rotation="1 MB")
+
+def info_filter(record):
+    return record["level"].name == "INFO"
+
+
+logger.add("logs/bot.log", rotation="1 MB", filter=info_filter)
+logger.add("logs/error.log", rotation="5 MB", level="ERROR")
 
 proxy = {
     "scheme": bot_cfg.scheme,  # 支持“socks4”、“socks5”和“http”
