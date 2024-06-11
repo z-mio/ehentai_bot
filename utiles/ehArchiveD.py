@@ -21,9 +21,9 @@ class EHentai:
         self.exHentai_base_url = "https://exhentai.org"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 "
-                          "Safari/537.36",
+            "Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,"
-                      "application/signed-exchange;v=b3;q=0.7",
+            "application/signed-exchange;v=b3;q=0.7",
             "origin": "https://e-hentai.org",
             "dnt": "1",
             "upgrade-insecure-requests": "1",
@@ -118,12 +118,14 @@ class EHentai:
     def check_ex_permission(self) -> str:
         """检查是否已经通过了exhentai的权限检查"""
 
-        response = httpx.get(self.exHentai_base_url, headers=self.headers, proxy=self.proxy)
+        response = httpx.get(
+            self.exHentai_base_url, headers=self.headers, proxy=self.proxy
+        )
         if response.status_code == 200:
             if response.text != "":
                 return self.exHentai_base_url
         else:
-            logger.error('无法检查里站权限')
+            logger.error("无法检查里站权限")
         return self.eHentai_base_url
 
 
@@ -148,27 +150,53 @@ class Torrent:
 
 @dataclass
 class GMetaData:
-    gid: int
-    token: str
-    archiver_key: str
-    title: str
-    title_jpn: str
-    category: str
-    thumb: str
-    uploader: str
-    posted: str
-    filecount: str
-    filesize: int
-    expunged: bool
-    rating: str
-    torrentcount: str
-    torrents: List[Torrent]
-    tags: List[str]
-    raw_json: dict
-    parent_gid: int = None
-    parent_key: str = None
-    first_gid: int = None
-    first_key: str = None
+    def __init__(
+        self,
+        gid: int,
+        token: str,
+        archiver_key: str,
+        title: str,
+        title_jpn: str,
+        category: str,
+        thumb: str,
+        uploader: str,
+        posted: str,
+        filecount: str,
+        filesize: int,
+        expunged: bool,
+        rating: str,
+        torrentcount: str,
+        torrents: List[Torrent],
+        tags: List[str],
+        raw_json: dict,
+        parent_gid: int = None,
+        parent_key: str = None,
+        first_gid: int = None,
+        first_key: str = None,
+        **kwargs,
+    ):
+        self.gid = gid
+        self.token = token
+        self.archiver_key = archiver_key
+        self.title = title
+        self.title_jpn = title_jpn
+        self.category = category
+        self.thumb = thumb
+        self.uploader = uploader
+        self.posted = posted
+        self.filecount = filecount
+        self.filesize = filesize
+        self.expunged = expunged
+        self.rating = rating
+        self.torrentcount = torrentcount
+        self.torrents = torrents
+        self.tags = tags
+        self.raw_json = raw_json
+        self.parent_gid = parent_gid
+        self.parent_key = parent_key
+        self.first_gid = first_gid
+        self.first_key = first_key
+        self.kwargs = kwargs
 
 
 class EHentaiError(Exception):
