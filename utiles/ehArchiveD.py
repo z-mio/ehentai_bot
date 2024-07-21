@@ -118,7 +118,7 @@ class EHentai:
             case None:
                 raise FaileGetGP()
             case match:
-                return int(gp) if (gp := match.group(3)).isdigit() else 0
+                return int(gp) if (gp := match.group(3)) else 0
 
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
