@@ -56,11 +56,11 @@ async def ep(_, msg: Message):
 
     await msg.reply_document(erp.json_path, quote=True, reply_markup=btn)
     await m.delete()
-
+    full_name = f"{msg.from_user.first_name} {msg.from_user.last_name or ''}".strip()
     uc = parse_count.get_counter(msg.from_user.id)
     uc.add_count(erp.require_gp)
     logger.info(
-        f"{msg.from_user.full_name} 归档 {msg.text} (今日 {uc.day_count} 个) (消耗 {f'{erp.require_gp} GP' if erp.require_gp else '免费'})"
+        f"{full_name} 归档 {msg.text} (今日 {uc.day_count} 个) (消耗 {f'{erp.require_gp} GP' if erp.require_gp else '免费'})"
     )
     os.remove(erp.json_path)
 
@@ -98,11 +98,11 @@ async def download_archiver(_, cq: CallbackQuery):
     await cq.message.edit_reply_markup(Ikm([[Ikb("下载中...", "downloading")]]))
     gurl = cq.data.split("_")[1]
     try:
-        archiver_info, d_url = await ehentai_parse(gurl)
-        file = f"{archiver_info.gid}.zip"
+        erp = await ehentai_parse(gurl)
+        file = f"{erp.archiver_info.gid}.zip"
         if not os.path.exists(file):
             """已存在则不再下载"""
-            file = await download_file(d_url, file, proxy=bot_cfg.proxy)
+            file = await download_file(erp.d_url, file, proxy=bot_cfg.proxy)
     except Exception as e:
         await cq.message.reply(f"下载失败: {e}")
         raise e
@@ -116,7 +116,8 @@ async def download_archiver(_, cq: CallbackQuery):
 @Client.on_callback_query(filters.regex(r"^cancel_"))
 async def cancel_dl(_, cq: CallbackQuery):
     gurl = cq.data.split("_")[1]
-    logger.info(f"{cq.from_user.full_name} 销毁 {gurl}")
+    full_name = f"{cq.from_user.first_name} {cq.from_user.last_name or ''}".strip()
+    logger.info(f"{full_name} 销毁 {gurl}")
     if not (await cancel_download(gurl)):
         await cq.answer("销毁下载失败")
         s = "失败"
@@ -124,7 +125,8 @@ async def cancel_dl(_, cq: CallbackQuery):
         await cq.message.edit_reply_markup()
         await cq.answer("已销毁下载")
         s = "成功"
-    logger.info(f"{cq.from_user.full_name} 创建的 {gurl} 销毁{s}")
+    logger.info(f"{full_name} 创建的 {gurl} 销毁{s}")
+
 
 
 @Client.on_message(filters.command("count") & is_admin)
