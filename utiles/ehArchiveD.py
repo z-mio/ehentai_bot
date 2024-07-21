@@ -107,6 +107,19 @@ class EHentai:
             case match:
                 return f"{match.group(1)}?start=1"
 
+    async def get_required_gp(self, archiver_info: "GMetaData") -> int:
+        """获取下载所需的GP"""
+        archiver = await self.__archiver(archiver_info, {})
+        match re.search(
+            r'(?<=float:right">)(.*<strong>((\d+) GP|Free!))(?=</strong>)',
+            archiver,
+            re.DOTALL,
+        ):
+            case None:
+                raise FaileGetGP()
+            case match:
+                return int(gp) if (gp := match.group(2)).isdigit() else 0
+
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
         """保存画廊信息"""
@@ -222,12 +235,17 @@ class IPBlocking(EHentaiError):
         super().__init__("IP已被Ehentai封锁，请更换代理")
 
 
+class FaileGetGP(EHentaiError):
+    def __init__(self):
+        super().__init__("获取下载所需GP失败")
+
+
 if __name__ == "__main__":
     cookie = ""
     e = EHentai(cookie)
-    gurl = e.get_gid_from_url("https://e-hentai.org/g/2260938/1976f6d65d/")
+    gurl = e.get_gid_from_url("https://e-hentai.org/g/2994240/1b22df4e47/")
     print(gurl)
     archiver_info = asyncio.run(e.get_archiver_info(gurl))
     print(archiver_info)
-    d_url = asyncio.run(e.get_download_url(archiver_info))
-    print(d_url)
+    required_gp = asyncio.run(e.get_required_gp(archiver_info))
+    print(required_gp)

@@ -9,15 +9,18 @@ class Counter:
         self.now_count = 0
         self.day_count = 0
         self.request_time = 0
+        self.require_gp = 0
 
-    def add_count(self):
+    def add_count(self, gp=0):
         self.now_count += 1
         self.day_count += 1
+        self.require_gp += gp
         self.request_time = time()
 
     def reset_now_count(self):
         self.now_count = 0
         self.request_time = 0
+        self.require_gp = 0
 
     def reset_day_count(self):
         self.day_count = 0
@@ -30,7 +33,7 @@ class UserCount:
     def __init__(self):
         if not chat_data.get("UserCount"):
             chat_data["UserCount"] = {}
-        self.data: dict[int, Counter] = chat_data['UserCount']
+        self.data: dict[int, Counter] = chat_data["UserCount"]
 
     def get_counter(self, uid: int):
         return self.init(uid)
@@ -41,6 +44,9 @@ class UserCount:
 
     def get_all_count(self):
         return sum(i.day_count for i in self.data.values())
+
+    def get_all_gp(self):
+        return sum(i.require_gp for i in self.data.values())
 
     def init(self, uid: int):
         if not self.data.get(uid):
@@ -53,7 +59,7 @@ parse_count = UserCount()
 
 def clear_regularly():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(parse_count.reset_all_day_count, 'cron', hour=0, minute=0)
+    scheduler.add_job(parse_count.reset_all_day_count, "cron", hour=0, minute=0)
     scheduler.start()
 
 

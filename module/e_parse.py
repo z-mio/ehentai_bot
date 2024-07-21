@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 from loguru import logger
 from pyrogram import Client, filters, enums
@@ -10,7 +11,7 @@ from pyrogram.types import (
 )
 from config.config import e_cfg, DP, bot_cfg
 from utiles.download_file import download_file
-from utiles.ehArchiveD import EHentai
+from utiles.ehArchiveD import EHentai, GMetaData
 from utiles.filter import is_admin
 from utiles.parse_count import parse_count
 from utiles.utile import is_admin_, rate_limit
@@ -23,22 +24,28 @@ scheduler.start()
 @Client.on_message(
     filters.regex(r"https://(?:e-|ex)hentai.org/g/(\d+)/([a-f0-9]+)") & filters.private
 )
-@rate_limit(request_limit=e_cfg.request_limit, time_limit=e_cfg.time_limit, total_request_limit=e_cfg.total_request_limit)
+@rate_limit(
+    request_limit=e_cfg.request_limit,
+    time_limit=e_cfg.time_limit,
+    total_request_limit=e_cfg.total_request_limit,
+)
 @logger.catch
 async def ep(_, msg: Message):
     if e_cfg.disable and not is_admin_(msg.from_user.id):
         return await msg.reply("解析功能暂未开放")
-    m = await msg.reply('解析中...')
+    m = await msg.reply("解析中...")
     try:
-        archiver_info, d_url, json_path = await ehentai_parse(msg.text, True)
+        erp = await ehentai_parse(msg.text, True)
     except Exception as e:
         await m.edit("解析失败, 请检查画廊链接是否正确")
         raise e
-    d = f"{archiver_info.gid}/{archiver_info.token}"
+    d = f"{erp.archiver_info.gid}/{erp.archiver_info.token}"
     btn = Ikm(
         [
             [
-                Ikb("下载", f"download_{d}") if e_cfg.download else Ikb("下载", url=d_url),
+                Ikb("下载", f"download_{d}")
+                if e_cfg.download
+                else Ikb("下载", url=erp.d_url),
                 Ikb("销毁下载", callback_data=f"cancel_{d}"),
             ]
         ]
@@ -47,26 +54,36 @@ async def ep(_, msg: Message):
     if not e_cfg.download and e_cfg.destroy_regularly:
         await destroy_regularly(msg.text)
 
-    await msg.reply_document(json_path, quote=True, reply_markup=btn)
+    await msg.reply_document(erp.json_path, quote=True, reply_markup=btn)
     await m.delete()
 
     uc = parse_count.get_counter(msg.from_user.id)
-    uc.add_count()
-    logger.info(f"{msg.from_user.full_name} 归档 {msg.text} (今日 {uc.day_count} 个)")
+    uc.add_count(erp.require_gp)
+    logger.info(
+        f"{msg.from_user.full_name} 归档 {msg.text} (今日 {uc.day_count} 个) (消耗 {f'{erp.require_gp} GP' if erp.require_gp else '免费'})"
+    )
+    os.remove(erp.json_path)
 
-    os.remove(json_path)
+
+@dataclass
+class EPR:
+    archiver_info: GMetaData
+    d_url: str
+    require_gp: int
+    json_path: str = None
 
 
-async def ehentai_parse(url: str, o_json: bool = False):
+async def ehentai_parse(url: str, o_json: bool = False) -> EPR:
     """解析e-hentai画廊链接"""
     ehentai = EHentai(e_cfg.cookies, proxy=bot_cfg.proxy)
     archiver_info = await ehentai.get_archiver_info(url)
+    require_gp = await ehentai.get_required_gp(archiver_info)
     d_url = await ehentai.get_download_url(archiver_info)
 
     if o_json:
         json_path = ehentai.save_gallery_info(archiver_info, DP)
-        return archiver_info, d_url, json_path
-    return archiver_info, d_url
+        return EPR(archiver_info, d_url, require_gp, json_path)
+    return EPR(archiver_info, d_url, require_gp)
 
 
 async def cancel_download(url: str) -> bool:
@@ -112,9 +129,13 @@ async def cancel_dl(_, cq: CallbackQuery):
 
 @Client.on_message(filters.command("count") & is_admin)
 async def count(_, msg: Message):
-    await msg.reply(f"今日解析次数: __{parse_count.get_all_count()}__")
+    await msg.reply(
+        f"今日解析次数: __{parse_count.get_all_count()}__\n今日消耗GP: __{parse_count.get_all_gp()}__"
+    )
 
 
 async def destroy_regularly(url: str):
     """定时销毁下载"""
-    scheduler.add_job(cancel_download, 'interval', args=[url], seconds=e_cfg.destroy_regularly)
+    scheduler.add_job(
+        cancel_download, "interval", args=[url], seconds=e_cfg.destroy_regularly
+    )
