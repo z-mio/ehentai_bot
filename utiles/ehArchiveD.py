@@ -111,7 +111,7 @@ class EHentai:
         """获取下载所需的GP"""
         archiver = await self.__archiver(archiver_info, {})
         original_div = re.search(
-            r'(?<=float:left").*(?=float:right">)', archiver, re.DOTALL
+            r'(?<=float:left).*(?=float:right)', archiver, re.DOTALL
         )
         match re.search(r".*<strong>((.*) GP|Free!)", original_div[0], re.DOTALL):
             case None:
