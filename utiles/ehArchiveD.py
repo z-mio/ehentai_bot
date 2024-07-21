@@ -111,14 +111,14 @@ class EHentai:
         """获取下载所需的GP"""
         archiver = await self.__archiver(archiver_info, {})
         match re.search(
-            r'(?<=float:right">)(.*<strong>((\d+) GP|Free!))(?=</strong>)',
+            r'(?<=float:right">)(.*<strong>((.*) GP|Free!))(?=</strong>)',
             archiver,
             re.DOTALL,
         ):
             case None:
                 raise FaileGetGP()
             case match:
-                return int(gp) if (gp := match.group(3)) else 0
+                return int(gp.replace(",", "")) if (gp := match.group(3)) else 0
 
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
