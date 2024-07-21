@@ -118,7 +118,7 @@ class EHentai:
             case None:
                 raise FaileGetGP()
             case match:
-                return int(gp) if (gp := match.group(2)).isdigit() else 0
+                return int(gp) if (gp := match.group(3)).isdigit() else 0
 
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
@@ -243,7 +243,7 @@ class FaileGetGP(EHentaiError):
 if __name__ == "__main__":
     cookie = ""
     e = EHentai(cookie)
-    gurl = e.get_gid_from_url("https://e-hentai.org/g/2994240/1b22df4e47/")
+    gurl = e.get_gid_from_url("https://e-hentai.org/g/2994353/a4f57a1001/")
     print(gurl)
     archiver_info = asyncio.run(e.get_archiver_info(gurl))
     print(archiver_info)
