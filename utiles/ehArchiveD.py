@@ -110,15 +110,14 @@ class EHentai:
     async def get_required_gp(self, archiver_info: "GMetaData") -> int:
         """获取下载所需的GP"""
         archiver = await self.__archiver(archiver_info, {})
-        match re.search(
-            r'(?<=float:right">)(.*<strong>((.*) GP|Free!))(?=</strong>)',
-            archiver,
-            re.DOTALL,
-        ):
+        original_div = re.search(
+            r'(?<=float:left").*(?=float:right">)', archiver, re.DOTALL
+        )
+        match re.search(r".*<strong>((.*) GP|Free!)", original_div[0], re.DOTALL):
             case None:
                 raise FaileGetGP()
             case match:
-                return int(gp.replace(",", "")) if (gp := match.group(3)) else 0
+                return int(gp.replace(",", "")) if (gp := match.group(2)) else 0
 
     @staticmethod
     def save_gallery_info(archiver_info: "GMetaData", output_path: str) -> str:
@@ -243,7 +242,7 @@ class FaileGetGP(EHentaiError):
 if __name__ == "__main__":
     cookie = ""
     e = EHentai(cookie)
-    gurl = e.get_gid_from_url("https://e-hentai.org/g/2994353/a4f57a1001/")
+    gurl = e.get_gid_from_url("https://e-hentai.org/g/2994360/3039ca53ce/")
     print(gurl)
     archiver_info = asyncio.run(e.get_archiver_info(gurl))
     print(archiver_info)
