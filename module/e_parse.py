@@ -98,11 +98,11 @@ async def download_archiver(_, cq: CallbackQuery):
     await cq.message.edit_reply_markup(Ikm([[Ikb("下载中...", "downloading")]]))
     gurl = cq.data.split("_")[1]
     try:
-        archiver_info, d_url = await ehentai_parse(gurl)
-        file = f"{archiver_info.gid}.zip"
+        epr = await ehentai_parse(gurl)
+        file = f"{epr.archiver_info.gid}.zip"
         if not os.path.exists(file):
             """已存在则不再下载"""
-            file = await download_file(d_url, file, proxy=bot_cfg.proxy)
+            file = await download_file(epr.d_url, file, proxy=bot_cfg.proxy)
     except Exception as e:
         await cq.message.reply(f"下载失败: {e}")
         raise e
