@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from limits import user_limiters, global_limiter, user_locks
 
 from loguru import logger
 from pyrogram import Client, filters, enums
@@ -31,38 +32,61 @@ scheduler.start()
 )
 @logger.catch
 async def ep(_, msg: Message):
-    if e_cfg.disable and not is_admin_(msg.from_user.id):
+    user_id = msg.from_user.id
+
+    # 检查功能禁用状态
+    if e_cfg.disable and not is_admin_(user_id):
         return await msg.reply("解析功能暂未开放")
-    m = await msg.reply("解析中...")
-    try:
-        erp = await ehentai_parse(msg.text, True)
-    except Exception as e:
-        await m.edit("解析失败, 请检查画廊链接是否正确")
-        raise e
-    d = f"{erp.archiver_info.gid}/{erp.archiver_info.token}"
-    btn = Ikm(
-        [
-            [
-                Ikb("下载", f"download_{d}")
-                if e_cfg.download
-                else Ikb("下载", url=erp.d_url),
-                Ikb("销毁下载", callback_data=f"cancel_{d}"),
-            ]
-        ]
-    )
 
-    if not e_cfg.download and e_cfg.destroy_regularly:
-        await destroy_regularly(msg.text)
+    user_limiter = user_limiters[user_id]
 
-    await msg.reply_document(erp.json_path, quote=True, reply_markup=btn)
-    await m.delete()
+    # 全局与用户限流检查
+    if not global_limiter.has_capacity():
+        return await msg.reply("当前请求人数过多，请稍后再试。")
 
-    uc = parse_count.get_counter(msg.from_user.id)
-    uc.add_count(erp.require_gp)
-    logger.info(
-        f"{msg.from_user.full_name} 归档 {msg.text} (今日 {uc.day_count} 个) (消耗 {f'{erp.require_gp} GP' if erp.require_gp else '免费'})"
-    )
-    os.remove(erp.json_path)
+    if not user_limiter.has_capacity():
+        return await msg.reply(f"你已达到每分钟请求上限，请稍后再试。")
+
+    async with global_limiter, user_limiter:
+        lock = user_locks[user_id]
+
+        if lock.locked():
+            return await msg.reply("你有一个任务正在处理中，请完成后再试。")
+
+        async with lock:
+            m = await msg.reply("解析中...")
+            try:
+                erp = await ehentai_parse(msg.text, True)
+            except Exception as e:
+                await m.edit(f"解析失败：{type(e).__name__}, 错误信息：{e}")
+                raise e
+
+            d = f"{erp.archiver_info.gid}/{erp.archiver_info.token}"
+            btn = Ikm(
+                [
+                    [
+                        Ikb("下载", f"download_{d}")
+                        if e_cfg.download
+                        else Ikb("下载", url=erp.d_url),
+                        Ikb("销毁下载", callback_data=f"cancel_{d}"),
+                    ]
+                ]
+            )
+
+            if not e_cfg.download and e_cfg.destroy_regularly:
+                await destroy_regularly(msg.text)
+
+            await msg.reply_document(erp.json_path, quote=True, reply_markup=btn)
+            await m.delete()
+
+            uc = parse_count.get_counter(user_id)
+            uc.add_count(erp.require_gp)
+            logger.info(
+                f"{msg.from_user.full_name} 归档 {msg.text} "
+                f"(今日 {uc.day_count} 个) "
+                f"(消耗 {f'{erp.require_gp} GP' if erp.require_gp else '免费'})"
+            )
+            os.remove(erp.json_path)
 
 
 @dataclass
